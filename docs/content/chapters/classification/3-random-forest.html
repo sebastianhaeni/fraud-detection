@@ -1,0 +1,49 @@
+<h3>Random Forest</h3>
+
+<p>
+  The grid search for RandomForestClassifier had the task to find the best hyper-params out of the following:
+</p>
+<ul>
+  <li><b>n_estimators</b>: 100, 150, 200, 250, 300</li>
+  <li><b>criterion</b>: gini, entropy</li>
+</ul>
+
+<p>
+  The best score was achieved with n_estimators=250 and criterion=gini. The score is 520€ which is the optimum.
+</p>
+
+<p>
+  The precision-recall plot looks more promising compared to the decision tree model. We now see that the model has
+  generalized. The curve does not have to be smooth produce acceptable results, but it would be good.
+</p>
+
+<figure>
+  <img src="images/random-forest/precision-recall.png">
+  <figcaption>Random forest precision-recall</figcaption>
+</figure>
+
+<p>
+  In the learning curve plot we can see that the model has a high variance problem. But nonetheless, both training
+  and cross-validated scores are positive, which is something we didn't reach before.
+</p>
+
+<figure>
+  <img src="images/random-forest/learning.png">
+  <figcaption>Random forest learning curves</figcaption>
+</figure>
+
+<p>
+  The score-threshold plot is a nice smooth curve, which is what we theoretically want. But we also want a global
+  optimum in the curve that we can pick to optimize the score. This curve is topping out and there are several
+  global optima available. This is a problem.
+</p>
+
+<figure>
+  <img src="images/random-forest/score-threshold.png">
+  <figcaption>Random forest score-threshold curves</figcaption>
+</figure>
+
+<p>
+  The best threshold is 56% and the score at that point is 132€. If we evaluate the model on the released test data,
+  we get a score of 10,455€ which is not too far off the maximum score possible but not the best algorithm evaluated.
+</p>

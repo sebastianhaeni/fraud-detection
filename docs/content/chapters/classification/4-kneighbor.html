@@ -1,0 +1,49 @@
+<h3>KNeighbor Classifier</h3>
+
+<p>
+  The grid search for KNeighborsClassifier had the task to find the best hyper-params out of the following:
+</p>
+<ul>
+  <li><b>n_neighbors</b>: 3, 5, 8, 9, 10, 11, 12, 15</li>
+  <li><b>weights</b>: uniform, distance</li>
+  <li><b>algorithm</b>: auto, ball_tree, kd_tree</li>
+</ul>
+
+<p>
+  The best score was achieved with n_neighbors=10, weights=uniform and algorithm=auto.
+  The score is -520€ which is what we would get if we would always predict 0 (not fraud). So, the model has probably
+  learned to always predict not fraud.
+</p>
+
+<p>
+  This is exactly what we see in the confusion matrix. Fraud is just never predicted.
+</p>
+
+<figure>
+  <img src="images/kneighbors/confusion.png">
+  <figcaption>KNeighbor classifier confusion matrix</figcaption>
+</figure>
+
+<p>
+  In the learning curve we see the same phenomena. The training score starts out good but gets worse and worse.
+</p>
+
+<figure>
+  <img src="images/kneighbors/learning.png">
+  <figcaption>KNeighbor classifier learning curves</figcaption>
+</figure>
+
+<p>
+  The maximum score in the score-threshold diagram also reveals that this models best threshold is just the threshold
+  that ensures fraud is never predicted. Every other choice would be worse than the baseline.
+</p>
+
+<figure>
+  <img src="images/kneighbors/score-threshold.png">
+  <figcaption>KNeighbor classifier score-threshold curves</figcaption>
+</figure>
+
+<p>
+  The best threshold is 56% and the score at that point is -126€. If we evaluate the model on the released test data,
+  we get a score of -118,635€.
+</p>

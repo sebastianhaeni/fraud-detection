@@ -1,0 +1,47 @@
+<h3>Support Vector Classifier</h3>
+
+<p>
+  The grid search for SVC had the task to find the best hyper-params out of the following:
+</p>
+<ul>
+  <li><b>C</b>: 0.5, 0.6, ..., 1</li>
+  <li><b>kernel</b>: rbf, linear</li>
+  <li><b>gamma</b>: scale, auto</li>
+</ul>
+
+<p>
+  The best score was achieved with C=0.8, kernel=linear and gamma=scale. The score is 295€.
+</p>
+
+<p>
+  The precision-recall plot looks good and nearly how we would want it to be.
+</p>
+
+<figure>
+  <img src="images/svc/precision-recall.png">
+  <figcaption>SVC precision-recall</figcaption>
+</figure>
+
+<p>
+  The learning curves reveal again a slight high variance problem.
+</p>
+
+<figure>
+  <img src="images/svc/learning.png">
+  <figcaption>SVC learning curves</figcaption>
+</figure>
+
+<p>
+  Now the score-threshold curve is a smooth curve with a global optimum. Finally the perfect curve we were looking
+  for.
+</p>
+
+<figure>
+  <img src="images/svc/score-threshold.png">
+  <figcaption>SVC score-threshold curves</figcaption>
+</figure>
+
+<p>
+  The best threshold is 56% and the score at that point is 84€. If we evaluate the model on the released test data,
+  we get a score of 44,785€.
+</p>

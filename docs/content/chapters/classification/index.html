@@ -1,0 +1,206 @@
+<div class="chapter">
+  <h2 class="break">Building a classifier</h2>
+  <p>
+    In this chapter we define our baselines and are exploring different methods to build a classifier.
+  </p>
+
+  <h3>Baselines</h3>
+  <p>
+    To have something to compare this to, we need some baselines. So, what score would we get, if we would simply always
+    predict 0 or 1 or at random. We also should figure out what the maximum score could theoretically be. So, if we hit
+    that, we know we are probably overfitting. These are the results on the given the data:
+  </p>
+
+  <figure>
+    <table>
+      <thead>
+      <tr>
+        <th></th>
+        <th>Train</th>
+        <th>Test</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td>100% accuracy</td>
+        <td>520€</td>
+        <td>118,635€</td>
+      </tr>
+      <tr>
+        <td>Always predicting fraud</td>
+        <td>-43,855€</td>
+        <td>-11,741,215€</td>
+      </tr>
+      <tr>
+        <td>Always predicting not fraud</td>
+        <td>-520€</td>
+        <td>-118,635€</td>
+      </tr>
+      <tr>
+        <td>Random (averaged)</td>
+        <td>-22,201€</td>
+        <td>-5,929,590€</td>
+      </tr>
+      </tbody>
+    </table>
+    <figcaption>Baseline scores on training and test data</figcaption>
+  </figure>
+
+  <p>
+    These scores show us, that we actually have a pretty hard problem to solve. The model should be very conservative
+    classifying something as fraud as the penalty is very big.
+  </p>
+
+  <h3>Pipeline</h3>
+
+  <p>
+    To try out different pipelines, we decided to use scikit-learn as a framework as it comes with almost all the
+    necessary tools to accomplish our task. The idea is to create a new Jupyter Notebook for each algorithm to try
+    that heavily relies on helper functions from several Python scripts. Each notebook will be structured exactly the
+    same and essentially execute the following steps:
+  </p>
+
+  <ol>
+    <li>Import packages</li>
+    <li>Load the fraud training data</li>
+    <li>Train a classifier with the given data using grid search for hyper parameter tuning</li>
+    <li>
+      Plot several diagrams about the training process:
+      <ul>
+        <li>Confusion matrix</li>
+        <li>Precision Recall</li>
+        <li>Receiver Operating Characteristics - ROC</li>
+        <li>Learning curves</li>
+        <li>Scalability of the model</li>
+        <li>Performance of the model</li>
+      </ul>
+    </li>
+    <li>Find the best prediction threshold to maximize our score</li>
+    <li>Test what score the model would get with the released test data</li>
+  </ol>
+
+  <p>
+    The goal was that each of those steps, except the model training, is a single function call. These utility
+    functions have been implemented in python scripts that reside in the same folder. This pipeline evolved as we were
+    creating new classifiers and a common pattern eventually emerged.
+  </p>
+
+  <h4>Training</h4>
+
+  <p>
+    The training code looks analogous to this code:
+  </p>
+  <figure>
+<pre><code class="text-left">decision_tree = DecisionTreeClassifier(class_weight='balanced')
+
+parameters = {'criterion': ('gini', 'entropy'), 'splitter': ('best', 'random')}
+clf = GridSearchCV(decision_tree,
+                   param_grid=parameters,
+                   cv=StratifiedKFold(n_splits=10),
+                   scoring=make_scorer(score_evaluation))
+
+model = clf.fit(X, y)
+</code></pre>
+    <figcaption>Classifier training code</figcaption>
+  </figure>
+
+  <p>
+    Notably, we use grid search to find the best hyper-parameters for the model and the training task. Inside the grid
+    search we additionally use StratifiedKFold to preserve the percentage of samples of each class, so we have a fair
+    cross validation score. The scoring is our custom scoring implementation.
+  </p>
+
+  <h4>Utils</h4>
+
+  <p>
+    The function <code>load_fraud_data</code> loads the data from the training data and transforms the dataframe
+    according to the variables we decided upon in the previous chapter.
+  </p>
+
+  <p>
+    The function <code>score_evaluation</code> creates a confusion matrix with the true labels and the predicted labels,
+    which it then uses to apply a score.
+  </p>
+
+  <figure>
+    <pre><code>def score_evaluation(y_true, y_pred):
+    conf = confusion_matrix(y_true, y_pred)
+    score = 0
+    score += conf[0][1] * -25
+    score += conf[1][0] * -5
+    score += conf[1][1] * 5
+
+    return score</code></pre>
+    <figcaption>score_evaluation function</figcaption>
+  </figure>
+
+  <p>
+    The function <code>find_best_thresh</code> iteratively searches the threshold value that optimizes the score of
+    the classifier. In the iteration loop, an average score at that threshold is computed. All scores and thresholds
+    are then stored to be plotted. Ideally we want to see that the model forms a nice curve with scores and that there
+    is a global optimum that we find. It may also be that the model produces chaos and the results are arbitrary. A
+    random curve would strongly indicate that the model will perform poorly on test data.
+  </p>
+
+  <p>
+    The function <code>get_test_score</code> takes the trained model and awards it a score from the released test data
+    of the contest.
+  </p>
+
+  <h4>Plots</h4>
+
+  <p>
+    The confusion matrix is generated with <code>plot_fraud_confusion_matrix</code> which uses scikit-learn and is
+    normalized. The train-test split used to fit the classifier is random.
+  </p>
+
+  <p>
+    The precision recall plot is generated with <code>plot_precision_recall_curve</code> from scikit-learn.
+  </p>
+
+  <p>
+    The cross-validated ROC curve is generated with <code>plot_cv_roc_curve</code> and has been taken from a
+    <a href="#ref-cv-roc">tutorial</a> page from scikit-learn. The visualization is more advanced than the normal ROC
+    plot, as it uses cross-validated models to generate multiple ROC curves in the same plot. This allows us to see an
+    interval in which the ROC curve would probably lie with test data.
+  </p>
+
+  <p>
+    The learning curves plot is generated with
+    <code>plot_learning_curve</code>. The implementation is heavily inspired by another sckit-learn
+    <a href="#ref-plot-learning-curves">tutorial</a>. The first plot shows the training and the cross-validated score
+    during the training process by using more samples.
+  </p>
+
+  {% include "./1-decision-tree.html" %}
+  {% include "./2-logistic-regression.html" %}
+  {% include "./3-random-forest.html" %}
+  {% include "./4-kneighbor.html" %}
+  {% include "./5-svc.html" %}
+  {% include "./6-neural-net.html" %}
+
+</div>
+
+<!-- References -->
+
+<p id="ref-cv-roc" class="reference-item">
+  <span class="ref">scikit-learn: Receiver Operating Characteristic (ROC) with cross validation</span>
+  <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc_crossval.html"
+     target="_blank"
+     rel="noopener">https://scikit-learn.org/stable/ auto_examples/model_selection/plot_roc_crossval.html</a>
+  <span class="retrieved">08.12.2019</span>
+</p>
+
+<p id="ref-plot-learning-curves" class="reference-item">
+  <span class="ref">scikit-learn: Plotting Learning Curves</span>
+  <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_learning_curve.html"
+     target="_blank"
+     rel="noopener">https://scikit-learn.org/stable/ auto_examples/model_selection/plot_learning_curve.html</a>
+  <span class="retrieved">08.12.2019</span>
+</p>
+
+<p id="ref-loss-function" class="reference-item">
+  <span class="ref">Github Keras: Is there a way in Keras to apply different weights to a cost function?</span>
+  <a href="https://github.com/keras-team/keras/issues/2115#issuecomment-204060456" target="_blank" rel="noopener">https://github.com/keras-team/keras/issues/2115#issuecomment-204060456</a>
+  <span class="retrieved">15.12.2019</span>
+</p>

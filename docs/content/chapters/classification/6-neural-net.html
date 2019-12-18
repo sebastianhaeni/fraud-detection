@@ -1,0 +1,44 @@
+<h3>Neural Net</h3>
+
+<p>
+  We also tried to fit a neural network to the data. The challenge herein lied in developing a loss function that
+  does not prohibit gradient descent from finding good steps and does reflect our score evaluation.
+</p>
+
+<p>
+  The network architecture would have been as follows:
+</p>
+
+<figure>
+  <pre><code>model = tf.keras.Sequential([
+    tf.keras.layers.Dense(64, activation='relu'),
+    tf.keras.layers.Dense(64, activation='relu'),
+    tf.keras.layers.Dense(1, activation='sigmoid')
+])</code></pre>
+  <figcaption>Neural network architecture</figcaption>
+</figure>
+
+<p>
+  Using the standard loss function <code>binary_crossentropy</code> this model converged. The problem was that it
+  did not optimize the score but rather the accuracy which is not what we want. So, we looked for a way to build a
+  loss function that has weights to our desire and still allows the algorithm to learn:
+</p>
+
+<figure><pre><code>def w_binary_crossentropy(y_true, y_pred, weights):
+    nb_cl = len(weights)
+    final_mask = K.zeros_like(y_pred[:, 0])
+    y_pred_max = K.max(y_pred, axis=1)
+    y_pred_max = K.reshape(y_pred_max, (K.shape(y_pred)[0], 1))
+    y_pred_max_mat = K.equal(y_pred, y_pred_max)
+    for c_p, c_t in product(range(nb_cl), range(nb_cl)):
+        final_mask += (weights[c_t, c_p] * y_pred_max_mat[:, c_p] * y_true[:, c_t])
+    return K.binary_crossentropy(y_pred, y_true) * final_mask
+</code></pre>
+  <figcaption>Weighted binary cross entropy loss function</figcaption>
+</figure>
+
+<p>
+  This function is inspired by a <a href="#ref-loss-function">Github Issue comment</a>. But when using this function,
+  the learner could not converge anymore because the loss was not scaled properly. We couldn't get this to work as
+  expected and abandoned the idea of neural networks.
+</p>

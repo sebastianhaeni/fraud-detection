@@ -1,0 +1,69 @@
+<h3>Logistic Regression</h3>
+
+<p>
+  Next we try a logistic regression model. This is a linear model that uses a logistic function to model a binary
+  variable. Since we are trying to solve a binary classification problem, this could work out.
+</p>
+
+<p>
+  The grid search for LogisticRegression had the task to find the best hyper-params out of the following:
+</p>
+
+<ul>
+  <li><b>C</b>: 0, 0.1, ..., 1</li>
+  <li><b>solver</b>: liblinear, lbfgs, newton-cg, sag, saga</li>
+</ul>
+
+<p>
+  The best score was achieved with C=1 and solver=lbfgs which are the default scikit-learn parameters.
+  The score although is -405€.
+</p>
+
+<p>
+  When looking at the confusion matrix of a model trained with these parameters, we see little difference compared to
+  the decision tree model:
+</p>
+
+<figure>
+  <img src="images/logistic-regression/confusion.png">
+  <figcaption>Logistic regression confusion matrix</figcaption>
+</figure>
+
+<p>
+  The precision-recall plot looks more promising compared to the decision tree model. We now see that the model has
+  generalized. The curve does not have to be smooth produce acceptable results, but it would be good.
+</p>
+
+<figure>
+  <img src="images/logistic-regression/precision-recall.png">
+  <figcaption>Logistic regression precision-recall</figcaption>
+</figure>
+
+<p>
+  In the learning curves we see that the cross-validated score actually reaches a positive value. But we also see
+  that the training score somehow reached a negative value. while the cross-validated score is barely positive. This
+  is due to the imbalanced dataset. In a slice of the data, the maximum might be a negative value. But we know in the
+  cross-validated score we can reach up to 520€.
+</p>
+
+<figure>
+  <img src="images/logistic-regression/learning.png">
+  <figcaption>Logistic regression learning curves</figcaption>
+</figure>
+
+<p>
+  Once we try to find the best threshold to decide between fraud and no fraud, we find, that this model actually
+  has a more predictive inner structure, as there clearly as a "best" threshold to be chosen to maximize the score.
+  The threshold finding algorithm has figured, that with this model, the threshold should be pretty high to maximize
+  the score to pay the evaluation matrix respect.
+</p>
+
+<figure>
+  <img src="images/logistic-regression/score-threshold.png">
+  <figcaption>Logistic regression score-threshold curves</figcaption>
+</figure>
+
+<p>
+  The best threshold is 91% and the score at that point is 78€. If we evaluate the model on the released test data,
+  we get a score of 44,605€ which is a great score compared to the theoretical maximum.
+</p>

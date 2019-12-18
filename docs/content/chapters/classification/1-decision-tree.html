@@ -1,0 +1,105 @@
+<h3>Decision Tree</h3>
+
+<p>
+  First we try to build a decision tree classifier. We use the dataset as prepared in the previous chapter. We use a
+  decision tree as the first simple algorithm knowingly it will probably either overfit or not fit at all as decision
+  trees are prone to.
+</p>
+
+<p>
+  The grid search for DecisionTreeClassifier had the task to find the best hyper-params out of the following:
+</p>
+
+<ul>
+  <li><b>criterion</b>: gini, entropy</li>
+  <li><b>splitter</b>: best, random</li>
+</ul>
+
+<p>
+  The best score was achieved with criterion=gini and splitter=random. The score is 520€.
+</p>
+
+<p>
+  We actually get the maximum positive monetary value. This mean our model fitted the data perfectly. This is commonly
+  the case with decision trees, that they overfit very likely. We would have to combat this with regularization
+  techniques such as limiting the splits or the depth.
+</p>
+
+<p>
+  Now if we train a model with the found hyper-parameters, we get the following plots:
+</p>
+
+<figure>
+  <img src="images/decision-tree/confusion.png">
+  <figcaption>Decision tree confusion matrix</figcaption>
+</figure>
+
+<p>
+  As the confusion matrix shows, the model is not good at predicting fraud at all.
+</p>
+
+
+<figure>
+  <img src="images/decision-tree/precision-recall.png">
+  <figcaption>Decision tree precision-recall</figcaption>
+</figure>
+
+<p>
+  In this plot we see that the model does not transition from precision to recall and rather has a hard point at which
+  it suddenly changes. This indicates the model is probably too simplistic.
+</p>
+
+<figure>
+  <img src="images/decision-tree/roc.png">
+  <figcaption>Decision tree cross-validated ROC curves</figcaption>
+</figure>
+
+<p>
+  We see the same here as we do multiple cross-validations. We intent the curve to be more belly shaped or round. Since
+  we are dealing with a severe imbalance of data, it actually does not make much sense to generate ROC curves as they
+  will always very much lean towards one side and reading them will be difficult. So, that's why in the further explored
+  algorithms we do no longer look at ROC curves. <a href="#ref-precision-recall">Source</a>
+</p>
+
+<figure>
+  <img src="images/decision-tree/learning.png">
+  <figcaption>Decision tree learning curves</figcaption>
+</figure>
+
+<p>
+  Finally, the learning curves show us that the model is not generalizing and rather only learning the training data.
+  No wonder as it's an unregularized decision tree.
+</p>
+
+<p>
+  We now want to figure out at what level we have to set the threshold for the model to predict fraud or no fraud. We do
+  not simply want to assume that at 50% probability it's either fraud or no fraud as we want to optimize our score at
+  the end. So, we built an algorithm that tries to find the best threshold to use by iterating through different
+  thresholds and with each simulating a train-test split and predicting the class probabilistically. The best threshold
+  found is to depict fraud when the probability is at 26% to maximize our score. We get a score of 133€ for it. But a
+  closer look at the distribution of scores reveals that this was pure coincidence as the model is too simple in itself:
+</p>
+
+<figure>
+  <img src="images/decision-tree/score-threshold.png">
+  <figcaption>Decision tree thresholds vs score</figcaption>
+</figure>
+
+<p>
+  The model also does not perform well at all with the released test data from the contest. It scores -37,340€ in
+  monetary value.
+</p>
+
+<p>
+  But not to dwell too much with this algorithm, we are going to move on to an algorithm that can generate a model that
+  has more capacity and better methods to avoid overfitting now.
+</p>
+
+
+<!-- References -->
+
+<p id="ref-precision-recall" class="reference-item">
+  <span class="ref">Machine Learning Mastery: How to Use ROC Curves and Precision-Recall Curves for Classification in Python</span>
+  <a href="https://machinelearningmastery.com/roc-curves-and-precision-recall-curves-for-classification-in-python/" target="_blank" rel="noopener">https://machinelearningmastery.com/roc-curves-and-precision-recall-curves-for-classification-in-python/</a>
+  <span class="retrieved">08.12.2019</span>
+</p>

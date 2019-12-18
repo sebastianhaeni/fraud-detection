@@ -1,0 +1,202 @@
+<div class="chapter">
+  <h2 class="break">Data Preparation</h2>
+  <p>
+    This chapter describes the data and the variable selection.
+  </p>
+
+  <h3>Artifacts</h3>
+  <p>
+    The given data is in form of a CSV file with a <code>|</code> as field separator. We received two files:
+  </p>
+  <ul>
+    <li><code>train.csv</code> containing 1,879 rows with 9 feature columns and one prediction column</li>
+    <li><code>test.csv</code> containing 498,122 rows with 9 feature columns and <b>no</b> prediction column</li>
+  </ul>
+  <p>
+    The train.csv file is used to train an estimator. The test.csv file is to use the estimator and predict for each
+    row if it has class fraud or not. The result has to be written into a new CSV file that has only one column, the
+    prediction of fraud (1) or not fraud (0). This then has to be submitted, so the contest jury can evaluate the score
+    of the candidate.
+  </p>
+  <p>
+    The columns in the data set are the following:
+  </p>
+  <figure class="affix">
+    <table>
+      <thead>
+      <tr>
+        <th>Column name</th>
+        <th>Description</th>
+        <th>Value range</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td>trustLevel</td>
+        <td>A customer's individual trust level. 6: Highest trustworthiness</td>
+        <td>{1,2,3,4,5,6}</td>
+      </tr>
+      <tr>
+        <td>totalScanTimeInSeconds</td>
+        <td>Total time in seconds between the first and last product scanned</td>
+        <td>Positive whole number</td>
+      </tr>
+      <tr>
+        <td>grandTotal</td>
+        <td>Grand total of products scanned</td>
+        <td>Positive decimal number with maximum two decimal places</td>
+      </tr>
+      <tr>
+        <td>lineItemVoids</td>
+        <td>Number of voided scans</td>
+        <td>Positive whole number</td>
+      </tr>
+      <tr>
+        <td>scansWithoutRegistration</td>
+        <td>Number of attempts to activate the scanner without actually scanning anything</td>
+        <td>Positive whole number or 0</td>
+      </tr>
+      <tr>
+        <td>quantityModification</td>
+        <td>Number of modified quantities for one of the scanned products</td>
+        <td>Positive whole number or 0</td>
+      </tr>
+      <tr>
+        <td>scannedLineItemsPerSecond</td>
+        <td>Average number of scanned products per second</td>
+        <td>Positive decimal number</td>
+      </tr>
+      <tr>
+        <td>valuePerSecond</td>
+        <td>Average total value of scanned products per second</td>
+        <td>Positive decimal number</td>
+      </tr>
+      <tr>
+        <td>lineItemVoidsPerPosition</td>
+        <td>Average number of item voids per total number of all scanned and not cancelled products</td>
+        <td>Positive decimal number</td>
+      </tr>
+      <tr>
+        <td>fraud</td>
+        <td>Classification as fraud (1) or not fraud (0)</td>
+        <td>{0,1}</td>
+      </tr>
+      </tbody>
+    </table>
+    <figcaption>Feature descriptions</figcaption>
+  </figure>
+
+  <h3>Data cleaning and preprocessing</h3>
+  <p>
+    Since the dataset is already well cleaned and doesn't contain noisy artifacts or null values, we don't have to
+    clean the data or care for missing data.
+  </p>
+
+  <h3>Data exploration</h3>
+  <p>
+    Next we want to explore the data. Particularly interesting is the distribution of fraud and not fraud in the train
+    dataset: Of the 1,879 rows, there are 1,775 cases of not fraud and <b>only</b> 104 cases of fraud. This means the
+    data is highly imbalanced. Since we know from the task description, that true positives, true negatives, false
+    positives and false negatives have different costs for the store operator, we know we probably have to come up with
+    a custom loss function later, weigh the classes or oversample the data. Otherwise an estimator would just learn to
+    predict no fraud and good is.
+  </p>
+
+  <h3>Data reduction and projection</h3>
+  <p>
+    We have 9 features we can consider to build the model. But are all of them really relevant? We should find out
+    first. We do this computing the correlation between the variables. Other possibilities would be using AIC stepwise
+    procedure.
+  </p>
+
+  <p>
+    Before we start, we have to have a closer look at the variables. The variables <code>trustLevel</code> could be
+    considered a categorical variable. Its range is from 1 to 6 but only integers. But since the level is increasing
+    and there is some meaning in the order of the values and not only in the ordinal position, we keep it as a numerical
+    value. Other variables might have high correlation with other variables as for example lineItemVoids and
+    lineItemVoidsPerPosition. The variables scannedLineItemsPerSecond and totalScanTimeInSeconds also must be
+    correlating.
+  </p>
+  <p>
+    The variables scannedLineItemsPerSecond and totalScanTimeInSeconds also seem like they could be combined to create
+    a new variable totalItemsScanned that could potentially be more predictive. So, we added this to the dataset. Since
+    we are now interested in distributions and correlations, we create a pairs plot. Or rather two since there are too
+    many variables to show.
+  </p>
+
+  <figure class="full">
+    <img src="images/pairs-1.png">
+    <figcaption>Pairs plot with variables trustLevel, totalScanTimeInSeconds, grandTotal, lineItemVoids,
+      quantityModifications, fraud
+    </figcaption>
+  </figure>
+  <figure class="full">
+    <img src="images/pairs-2.png">
+    <figcaption>Pairs plot with variables totalItemsScanned, scannedLineItemsPerSecond, valuePerSecond,
+      lineItemVoidsPerPosition, fraud
+    </figcaption>
+  </figure>
+
+  <p>
+    We can see that some variables actually do show some separation when correlated to the predictor variable, which is
+    a good thing. We can also see that some variables are noisy.
+  </p>
+
+  <p>
+    For a better understanding and more intuition, we also create a correlation plot with Pearson's method.
+  </p>
+
+  <figure class="affix full">
+    <img src="images/correlation-pearson.png">
+    <figcaption>Correlation heatmap with Pearson's method</figcaption>
+  </figure>
+
+  <p>
+    This lets us see what we anticipated before. We score each variable with their correlation value and order them
+    in a table:
+  </p>
+
+  <figure class="affix">
+    <table>
+      <tr><th>Variable</th><th>Correlation</th></tr>
+      <tr><td>fraud</td><td>1.000000</td></tr>
+      <tr><td>trustLevel</td><td>0.319765</td></tr>
+      <tr><td>totalItemsScanned</td><td>0.298423</td></tr>
+      <tr><td>totalScanTimeInSeconds</td><td>0.110414</td></tr>
+      <tr><td>lineItemVoidsPerPosition</td><td>0.090116</td></tr>
+      <tr><td>scansWithoutRegistration</td><td>0.074123</td></tr>
+      <tr><td>lineItemVoids</td><td>0.063496</td></tr>
+      <tr><td>valuePerSecond</td><td>0.028873</td></tr>
+      <tr><td>scannedLineItemsPerSecond</td><td>0.023085</td></tr>
+      <tr><td>grandTotal</td><td>0.001421</td></tr>
+      <tr><td>quantityModifications</td><td>0.000864</td></tr>
+    </table>
+    <figcaption>Correlation of each variable to the predictor variable fraud</figcaption>
+  </figure>
+
+  <p>
+    From here we scrap variables that have a very low correlation value or are built into another variable. Variables
+    we remove because they are correlating with another variable are: scannedLineItemsPerSecond,
+    lineItemVoidsPerPosition and valuePerSecond. Variables we remove because their correlation value is too low are:
+    quantityModifications and grandTotal. We end up with these 4 variables: trustLevel, totalItemsScanned,
+    totalScanTimeInSeconds and lineItemVoids.
+  </p>
+
+  <h3>Selection of algorithms</h3>
+  <p>
+    Since we're dealing with only a few variables and not with high dimensional data, we can resort to simpler methods
+    such as linear models, i.e. logistic regression, decision trees or support vector classification SVC.
+  </p>
+  <p>
+    The <a href="#ref-scikit-learn-cheatsheet">scikit-learn cheat sheet</a> gives a good overview which algorithms we
+    should be exploring. So we will actually follow this chart.
+  </p>
+</div>
+
+<!-- References -->
+
+<p id="ref-scikit-learn-cheatsheet" class="reference-item">
+  <span class="ref">scikit-learn: Choosing the right estimator</span>
+  <a href="https://scikit-learn.org/stable/tutorial/machine_learning_map/index.html" target="_blank" rel="noopener">https://scikit-learn.org/stable/tutorial/machine_learning_map/index.html</a>
+  <span class="retrieved">04.05.2019</span>
+</p>

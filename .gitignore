@@ -1,0 +1,23 @@
+# IDE specifics
+.idea/
+.vs/
+.vscode/
+*.iml
+*.user
+
+# Dependencies
+node_modules/
+packages/
+venv/
+
+# Build artifacts
+build/
+target/
+bin/
+obj/
+
+# Temp files
+*.log
+*.asv
+*.cache
+.ipynb_checkpoints/

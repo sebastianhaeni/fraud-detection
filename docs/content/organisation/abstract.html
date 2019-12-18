@@ -1,0 +1,25 @@
+<div class="chapter">
+
+  <h2 class="break nonr">Abstract</h2>
+
+  <p>
+    The goal of this project was to participate in the Data Mining Cup 2019 and produce a report about it, as well as
+    code artifacts used to solve the challenge. The dataset has been analyzed to prepare the data for the training
+    step. We identified contributions of features to the prediction, eradicated dependent features and created new
+    ones. The resulting dataset had four remaining variables with a significant correlation with the prediction variable
+    "fraud".
+  </p>
+
+  <p>
+    The classifiers explored include decision trees, logistic regression, random forests, K-neighbor and support
+    vectors. The scores they reached with the final released test set from the contest were acceptable for SVC
+    (37,690€), logistic regression (7,005€) and random forests (2,250€). The theoretical maximum score to achieve with a
+    100% accurate model would have been 118,635€. A random classifier would have scored negative 5,929,590€.
+  </p>
+
+  <p>
+    The challenge lied mainly in finding a suitable scoring function to tune the classifiers with. The dataset was
+    highly imbalanced. Totally it contained 1775 non fraud samples and 104 fraud samples. The resulting model has to
+    be regularized so it does not overfit in training but still receive an acceptable score.
+  </p>
+</div>

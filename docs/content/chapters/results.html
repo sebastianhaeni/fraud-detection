@@ -1,0 +1,62 @@
+<div class="chapter">
+  <h2 class="break">Results</h2>
+  <p>
+    The different classifiers performed roughly in the order we would have expected them to. What we didn't know is if
+    the actual scores would turn out to be any good and competitive in the competition.
+  </p>
+  <p>
+    What we also noticed when trying a more complex method than an SVC, we struggled to get the classifier to train with
+    the data. With such little number of samples, it is not feasible to train a neural network.
+  </p>
+
+  <h3>Scores</h3>
+
+  <figure>
+    <table>
+      <thead>
+      <tr>
+        <th>Algorithm</th>
+        <th>Score in training</th>
+        <th>Score in test</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr><td>SVC</td><td>84€</td><td>44,785€</td></tr>
+      <tr><td>Logistic Regression</td><td>78€</td><td>44,605€</td></tr>
+      <tr><td>Random Forest</td><td>132€</td><td>10,455€</td></tr>
+      <tr><td>Decision Tree</td><td>96€</td><td>-37,340€</td></tr>
+      <tr><td>KNeighbor Classifier</td><td>-126€</td><td>-118,635€</td></tr>
+      </tbody>
+    </table>
+    <figcaption>Resulting scores of different model algorithms tried</figcaption>
+  </figure>
+
+  <p>
+    The best classifier thus is the SVC closely followed by Logistic Regression for this particular problem. We are not
+    surprised by the outcome as an SVC is able to come to the best trade off. It can cope with linear data extremely
+    well and if the data is non-linear, it can project the data into a linear space. The close follower Logistic
+    Regression probably did that good because we boiled down the variables down to four and had the problem of binary
+    classification to which logistic regression is very easy to apply.
+  </p>
+
+  <h3>Conclusion</h3>
+
+  <p>
+    It was very helpful to read into data pre-processing, variable selection, training algorithms, cross-validation,
+    grid search, regularization, evaluation and so on. This was a small enough project to not be overloaded with the
+    challenge, but still tricky enough that simple copy-paste from the Internet simply doesn't work. We had to think
+    hard about the problem and make the right conclusions to get to an acceptable result.
+  </p>
+
+  <p>
+    Personally, I think the contest was a bit artificial as the training set was so small. Training a classifier on such
+    little data will inevitably result in some variance in the submitted results from other contestants. Thus, luck was
+    certainly needed to perform well in this competition besides building a robust classifier.
+  </p>
+
+  <p>
+    Overall, I'm happy to have completed the project and I think I learned a lot of hands-on techniques that I only
+    heard of in lectures.
+  </p>
+
+</div>
