@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>DMC 2019 - Fraud Detection</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Sebastian Häni">
+  <link rel="stylesheet" href="vendor/normalize.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans">
+  <link rel="stylesheet" href="main.css">
+  <script src="vendor/jquery.min.js"></script>
+  <script src="doc.js"></script>
+</head>
+<body>
+
+<div class="front">
+  <p>
+    Zurich University of Applied Sciences<br/>
+    Master of Science in Engineering<br/>
+    Project 1
+  </p>
+  <h1>
+    Data Mining Cup 2019:<br>
+    Fraud detection at self-checkouts in retail
+  </h1>
+
+  <table>
+    <tbody>
+    <tr>
+      <td>Student:</td>
+      <td>Sebastian Häni, <a href="mailto:haeni.sebastian@gmail.com" target="_blank" rel="noopener">haeni.sebastian@gmail.com</a></td>
+    </tr>
+    <tr>
+      <td>Advisor:</td>
+      <td>Andreas Weiler, <a href="mailto:wele@zhaw.ch" target="_blank" rel="noopener">wele@zhaw.ch</a></td>
+    </tr>
+    <tr>
+      <td>Version:</td>
+      <td class="version">1.0.0, <span>11.05.2021</span></td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="chapter">
+  <p>
+    This document was written as part of a master's program project at the Zurich University of Applied Sciences ZHAW.
+  </p>
+
+  <p>
+    All project information such as this documentation and the source code are publicly available on the project website
+    at
+    <a href="https://github.com/sebastianhaeni/fraud-detection" rel="noopener">https://github.com/sebastianhaeni/fraud-detection</a>.
+  </p>
+
+  <p>
+    All sources are numbered [<em>n</em>] and listed in the list of sources in the Appendix. Basic knowledge in computer
+    and data
+    science is required to understand this work. The most important abbreviations and concepts are explained in the
+    glossary, which can also be found in the Appendix.
+  </p>
+
+  <p>
+    This document was written in HTML and converted into a PDF file using <a href="#ref-prince">Prince</a>.
+    The font used is <em>Open Sans</em>, designed by Steve Matteson on behalf of Google.
+  </p>
+</div>
+
+<p id="ref-prince" class="reference-item">
+  <span class="ref">YesLogic Pty. Ltd.: Prince</span>.
+  <a href="http://www.princexml.com/" target="_blank" rel="noopener">http://www.princexml.com/</a>
+  <span class="retrieved">22.07.2019</span>
+</p>
+
+<div class="chapter">
+
+  <h2 class="break nonr">Abstract</h2>
+
+  <p>
+    The goal of this project was to participate in the Data Mining Cup 2019 and produce a report about it, as well as
+    code artifacts used to solve the challenge. The dataset has been analyzed to prepare the data for the training
+    step. We identified contributions of features to the prediction, eradicated dependent features and created new
+    ones. The resulting dataset had four remaining variables with a significant correlation with the prediction variable
+    "fraud".
+  </p>
+
+  <p>
+    The classifiers explored include decision trees, logistic regression, random forests, K-neighbor and support
+    vectors. The scores they reached with the final released test set from the contest were acceptable for SVC
+    (37,690€), logistic regression (7,005€) and random forests (2,250€). The theoretical maximum score to achieve with a
+    100% accurate model would have been 118,635€. A random classifier would have scored negative 5,929,590€.
+  </p>
+
+  <p>
+    The challenge lied mainly in finding a suitable scoring function to tune the classifiers with. The dataset was
+    highly imbalanced. Totally it contained 1775 non fraud samples and 104 fraud samples. The resulting model has to
+    be regularized so it does not overfit in training but still receive an acceptable score.
+  </p>
+</div>
+
+<div class="chapter">
+  <h2 class="break nonr">Contents</h2>
+  <ol id="toc" class="allow-page-break"></ol>
+</div>
+
+
+<div class="chapter">
+  <h2 class="break">Introduction</h2>
+
+  <h3>Competition</h3>
+  <p>
+    The goal of this project was to participate in the Data Mining Cup 2019 and produce a report about it as well as
+    code artifacts used to solve the challenge. The following chapter gives an overview of the Data Mining Cup and the
+    Challenge 2019. The following content a copy from the <a href="#ref-dmc">Data Mining Cup website</a>.
+  </p>
+
+  <h3>Data Mining Cup</h3>
+
+  <p>
+    The DATA MINING CUP (DMC for short) has inspired students around the world to pursue intelligent data analysis since
+    the year 2000. In the 20th DATA MINING CUP in 2019 about 150 teams from 114 universities in 28 countries took part
+    in the competition. The best teams were invited to Berlin for the awards ceremony at the retail intelligence summit.
+  </p>
+
+  <h4>Challenge 2019</h4>
+
+  <p>
+    The number of self-checkout stations is on the rise. This includes stationary self-checkouts, where customers take
+    their shopping cart to a scan station and pay for their products. Secondly, there are semi-stationary
+    self-checkouts, where customers scan their products directly and only pay at a counter. The customers either use
+    their own smartphone for scanning or the store provides mobile scanners. You will probably have encountered this
+    already.
+  </p>
+
+  <p>
+    This automated process helps avoid long lines and speeds up the paying process for individual customers. But how
+    can retailers prevent the trust they have placed in customers from being abused? How can they decide which purchases
+    to check in an effort to expose fraudsters without annoying innocent customers?
+  </p>
+
+  <h4>Scenario</h4>
+
+  <p>
+    An established food retailer has introduced a self-scanning system that allows customers to scan their items using a
+    handheld mobile scanner while shopping
+  </p>
+  <p>
+    This type of payment leaves retailers open to the risk that a certain number of customers will take advantage of
+    this freedom to commit fraud by not scanning all of the items in their cart.
+  </p>
+  <p>
+    Empirical research conducted by suppliers has shown that discrepancies are found in approximately 5 % of all
+    self-scan transactions. The research does not differentiate between actual fraudulent intent of the customer,
+    inadvertent errors or technical problems with scanners.
+  </p>
+
+  <h4>Task</h4>
+
+  <p>
+    To minimize losses, the food retailer hopes to identify cases of fraud using targeted follow-up checks. The
+    challenge here is to keep the number of checks as low as possible to avoid unnecessary added expense as well as to
+    avoid putting off innocent customers due to false accusations. At the same time, however, the goal is to identify as
+    many false scans as possible.
+  </p>
+  <p>
+    The objective of the participating teams is to create a model to classify the scans as fraudulent or non-fraudulent.
+    The classification does not take into account whether the fraud was committed intentionally or inadvertently.
+  </p>
+
+  <h4>Evaluation</h4>
+  <p>
+    The solutions submitted will be assessed and compared based on their monetary value for the food retailer. This can
+    be calculated using the following cost matrix based on empirical observation.
+  </p>
+  <figure>
+    <table>
+      <tbody>
+      <tr>
+        <td></td>
+        <th colspan="3" style="text-align: center;">Actual value</th>
+      </tr>
+      <tr>
+        <th rowspan="3" style="vertical-align: middle;">Prediction</th>
+        <td></td>
+        <td>0 (no fraud)</td>
+        <td>1 (fraud)</td>
+      </tr>
+      <tr>
+        <td>0 (no fraud)</td>
+        <td>€ 0.0</td>
+        <td>€ -5.0</td>
+      </tr>
+      <tr>
+        <td>1 (fraud)</td>
+        <td>€ -25.0</td>
+        <td>€ 5.0</td>
+      </tr>
+      </tbody>
+    </table>
+    <figcaption>Evaluation matrix</figcaption>
+  </figure>
+
+</div>
+
+<!-- References -->
+
+<p id="ref-dmc" class="reference-item">
+  <span class="ref">Data Mining Cup</span>
+  <a href="https://www.data-mining-cup.com" target="_blank" rel="noopener">https://www.data-mining-cup.com</a>
+  <span class="retrieved">30.04.2019</span>
+</p>
+
+<div class="chapter">
+  <h2 class="break">Data Preparation</h2>
+  <p>
+    This chapter describes the data and the variable selection.
+  </p>
+
+  <h3>Artifacts</h3>
+  <p>
+    The given data is in form of a CSV file with a <code>|</code> as field separator. We received two files:
+  </p>
+  <ul>
+    <li><code>train.csv</code> containing 1,879 rows with 9 feature columns and one prediction column</li>
+    <li><code>test.csv</code> containing 498,122 rows with 9 feature columns and <b>no</b> prediction column</li>
+  </ul>
+  <p>
+    The train.csv file is used to train an estimator. The test.csv file is to use the estimator and predict for each
+    row if it has class fraud or not. The result has to be written into a new CSV file that has only one column, the
+    prediction of fraud (1) or not fraud (0). This then has to be submitted, so the contest jury can evaluate the score
+    of the candidate.
+  </p>
+  <p>
+    The columns in the data set are the following:
+  </p>
+  <figure class="affix">
+    <table>
+      <thead>
+      <tr>
+        <th>Column name</th>
+        <th>Description</th>
+        <th>Value range</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td>trustLevel</td>
+        <td>A customer's individual trust level. 6: Highest trustworthiness</td>
+        <td>{1,2,3,4,5,6}</td>
+      </tr>
+      <tr>
+        <td>totalScanTimeInSeconds</td>
+        <td>Total time in seconds between the first and last product scanned</td>
+        <td>Positive whole number</td>
+      </tr>
+      <tr>
+        <td>grandTotal</td>
+        <td>Grand total of products scanned</td>
+        <td>Positive decimal number with maximum two decimal places</td>
+      </tr>
+      <tr>
+        <td>lineItemVoids</td>
+        <td>Number of voided scans</td>
+        <td>Positive whole number</td>
+      </tr>
+      <tr>
+        <td>scansWithoutRegistration</td>
+        <td>Number of attempts to activate the scanner without actually scanning anything</td>
+        <td>Positive whole number or 0</td>
+      </tr>
+      <tr>
+        <td>quantityModification</td>
+        <td>Number of modified quantities for one of the scanned products</td>
+        <td>Positive whole number or 0</td>
+      </tr>
+      <tr>
+        <td>scannedLineItemsPerSecond</td>
+        <td>Average number of scanned products per second</td>
+        <td>Positive decimal number</td>
+      </tr>
+      <tr>
+        <td>valuePerSecond</td>
+        <td>Average total value of scanned products per second</td>
+        <td>Positive decimal number</td>
+      </tr>
+      <tr>
+        <td>lineItemVoidsPerPosition</td>
+        <td>Average number of item voids per total number of all scanned and not cancelled products</td>
+        <td>Positive decimal number</td>
+      </tr>
+      <tr>
+        <td>fraud</td>
+        <td>Classification as fraud (1) or not fraud (0)</td>
+        <td>{0,1}</td>
+      </tr>
+      </tbody>
+    </table>
+    <figcaption>Feature descriptions</figcaption>
+  </figure>
+
+  <h3>Data cleaning and preprocessing</h3>
+  <p>
+    Since the dataset is already well cleaned and doesn't contain noisy artifacts or null values, we don't have to
+    clean the data or care for missing data.
+  </p>
+
+  <h3>Data exploration</h3>
+  <p>
+    Next we want to explore the data. Particularly interesting is the distribution of fraud and not fraud in the train
+    dataset: Of the 1,879 rows, there are 1,775 cases of not fraud and <b>only</b> 104 cases of fraud. This means the
+    data is highly imbalanced. Since we know from the task description, that true positives, true negatives, false
+    positives and false negatives have different costs for the store operator, we know we probably have to come up with
+    a custom loss function later, weigh the classes or oversample the data. Otherwise an estimator would just learn to
+    predict no fraud and good is.
+  </p>
+
+  <h3>Data reduction and projection</h3>
+  <p>
+    We have 9 features we can consider to build the model. But are all of them really relevant? We should find out
+    first. We do this computing the correlation between the variables. Other possibilities would be using AIC stepwise
+    procedure.
+  </p>
+
+  <p>
+    Before we start, we have to have a closer look at the variables. The variables <code>trustLevel</code> could be
+    considered a categorical variable. Its range is from 1 to 6 but only integers. But since the level is increasing
+    and there is some meaning in the order of the values and not only in the ordinal position, we keep it as a numerical
+    value. Other variables might have high correlation with other variables as for example lineItemVoids and
+    lineItemVoidsPerPosition. The variables scannedLineItemsPerSecond and totalScanTimeInSeconds also must be
+    correlating.
+  </p>
+  <p>
+    The variables scannedLineItemsPerSecond and totalScanTimeInSeconds also seem like they could be combined to create
+    a new variable totalItemsScanned that could potentially be more predictive. So, we added this to the dataset. Since
+    we are now interested in distributions and correlations, we create a pairs plot. Or rather two since there are too
+    many variables to show.
+  </p>
+
+  <figure class="full">
+    <img src="images/pairs-1.png">
+    <figcaption>Pairs plot with variables trustLevel, totalScanTimeInSeconds, grandTotal, lineItemVoids,
+      quantityModifications, fraud
+    </figcaption>
+  </figure>
+  <figure class="full">
+    <img src="images/pairs-2.png">
+    <figcaption>Pairs plot with variables totalItemsScanned, scannedLineItemsPerSecond, valuePerSecond,
+      lineItemVoidsPerPosition, fraud
+    </figcaption>
+  </figure>
+
+  <p>
+    We can see that some variables actually do show some separation when correlated to the predictor variable, which is
+    a good thing. We can also see that some variables are noisy.
+  </p>
+
+  <p>
+    For a better understanding and more intuition, we also create a correlation plot with Pearson's method.
+  </p>
+
+  <figure class="affix full">
+    <img src="images/correlation-pearson.png">
+    <figcaption>Correlation heatmap with Pearson's method</figcaption>
+  </figure>
+
+  <p>
+    This lets us see what we anticipated before. We score each variable with their correlation value and order them
+    in a table:
+  </p>
+
+  <figure class="affix">
+    <table>
+      <tr><th>Variable</th><th>Correlation</th></tr>
+      <tr><td>fraud</td><td>1.000000</td></tr>
+      <tr><td>trustLevel</td><td>0.319765</td></tr>
+      <tr><td>totalItemsScanned</td><td>0.298423</td></tr>
+      <tr><td>totalScanTimeInSeconds</td><td>0.110414</td></tr>
+      <tr><td>lineItemVoidsPerPosition</td><td>0.090116</td></tr>
+      <tr><td>scansWithoutRegistration</td><td>0.074123</td></tr>
+      <tr><td>lineItemVoids</td><td>0.063496</td></tr>
+      <tr><td>valuePerSecond</td><td>0.028873</td></tr>
+      <tr><td>scannedLineItemsPerSecond</td><td>0.023085</td></tr>
+      <tr><td>grandTotal</td><td>0.001421</td></tr>
+      <tr><td>quantityModifications</td><td>0.000864</td></tr>
+    </table>
+    <figcaption>Correlation of each variable to the predictor variable fraud</figcaption>
+  </figure>
+
+  <p>
+    From here we scrap variables that have a very low correlation value or are built into another variable. Variables
+    we remove because they are correlating with another variable are: scannedLineItemsPerSecond,
+    lineItemVoidsPerPosition and valuePerSecond. Variables we remove because their correlation value is too low are:
+    quantityModifications and grandTotal. We end up with these 4 variables: trustLevel, totalItemsScanned,
+    totalScanTimeInSeconds and lineItemVoids.
+  </p>
+
+  <h3>Selection of algorithms</h3>
+  <p>
+    Since we're dealing with only a few variables and not with high dimensional data, we can resort to simpler methods
+    such as linear models, i.e. logistic regression, decision trees or support vector classification SVC.
+  </p>
+  <p>
+    The <a href="#ref-scikit-learn-cheatsheet">scikit-learn cheat sheet</a> gives a good overview which algorithms we
+    should be exploring. So we will actually follow this chart.
+  </p>
+</div>
+
+<!-- References -->
+
+<p id="ref-scikit-learn-cheatsheet" class="reference-item">
+  <span class="ref">scikit-learn: Choosing the right estimator</span>
+  <a href="https://scikit-learn.org/stable/tutorial/machine_learning_map/index.html" target="_blank" rel="noopener">https://scikit-learn.org/stable/tutorial/machine_learning_map/index.html</a>
+  <span class="retrieved">04.05.2019</span>
+</p>
+
+<div class="chapter">
+  <h2 class="break">Building a classifier</h2>
+  <p>
+    In this chapter we define our baselines and are exploring different methods to build a classifier.
+  </p>
+
+  <h3>Baselines</h3>
+  <p>
+    To have something to compare this to, we need some baselines. So, what score would we get, if we would simply always
+    predict 0 or 1 or at random. We also should figure out what the maximum score could theoretically be. So, if we hit
+    that, we know we are probably overfitting. These are the results on the given the data:
+  </p>
+
+  <figure>
+    <table>
+      <thead>
+      <tr>
+        <th></th>
+        <th>Train</th>
+        <th>Test</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td>100% accuracy</td>
+        <td>520€</td>
+        <td>118,635€</td>
+      </tr>
+      <tr>
+        <td>Always predicting fraud</td>
+        <td>-43,855€</td>
+        <td>-11,741,215€</td>
+      </tr>
+      <tr>
+        <td>Always predicting not fraud</td>
+        <td>-520€</td>
+        <td>-118,635€</td>
+      </tr>
+      <tr>
+        <td>Random (averaged)</td>
+        <td>-22,201€</td>
+        <td>-5,929,590€</td>
+      </tr>
+      </tbody>
+    </table>
+    <figcaption>Baseline scores on training and test data</figcaption>
+  </figure>
+
+  <p>
+    These scores show us, that we actually have a pretty hard problem to solve. The model should be very conservative
+    classifying something as fraud as the penalty is very big.
+  </p>
+
+  <h3>Pipeline</h3>
+
+  <p>
+    To try out different pipelines, we decided to use scikit-learn as a framework as it comes with almost all the
+    necessary tools to accomplish our task. The idea is to create a new Jupyter Notebook for each algorithm to try
+    that heavily relies on helper functions from several Python scripts. Each notebook will be structured exactly the
+    same and essentially execute the following steps:
+  </p>
+
+  <ol>
+    <li>Import packages</li>
+    <li>Load the fraud training data</li>
+    <li>Train a classifier with the given data using grid search for hyper parameter tuning</li>
+    <li>
+      Plot several diagrams about the training process:
+      <ul>
+        <li>Confusion matrix</li>
+        <li>Precision Recall</li>
+        <li>Receiver Operating Characteristics - ROC</li>
+        <li>Learning curves</li>
+        <li>Scalability of the model</li>
+        <li>Performance of the model</li>
+      </ul>
+    </li>
+    <li>Find the best prediction threshold to maximize our score</li>
+    <li>Test what score the model would get with the released test data</li>
+  </ol>
+
+  <p>
+    The goal was that each of those steps, except the model training, is a single function call. These utility
+    functions have been implemented in python scripts that reside in the same folder. This pipeline evolved as we were
+    creating new classifiers and a common pattern eventually emerged.
+  </p>
+
+  <h4>Training</h4>
+
+  <p>
+    The training code looks analogous to this code:
+  </p>
+  <figure>
+<pre><code class="text-left">decision_tree = DecisionTreeClassifier(class_weight='balanced')
+
+parameters = {'criterion': ('gini', 'entropy'), 'splitter': ('best', 'random')}
+clf = GridSearchCV(decision_tree,
+                   param_grid=parameters,
+                   cv=StratifiedKFold(n_splits=10),
+                   scoring=make_scorer(score_evaluation))
+
+model = clf.fit(X, y)
+</code></pre>
+    <figcaption>Classifier training code</figcaption>
+  </figure>
+
+  <p>
+    Notably, we use grid search to find the best hyper-parameters for the model and the training task. Inside the grid
+    search we additionally use StratifiedKFold to preserve the percentage of samples of each class, so we have a fair
+    cross validation score. The scoring is our custom scoring implementation.
+  </p>
+
+  <h4>Utils</h4>
+
+  <p>
+    The function <code>load_fraud_data</code> loads the data from the training data and transforms the dataframe
+    according to the variables we decided upon in the previous chapter.
+  </p>
+
+  <p>
+    The function <code>score_evaluation</code> creates a confusion matrix with the true labels and the predicted labels,
+    which it then uses to apply a score.
+  </p>
+
+  <figure>
+    <pre><code>def score_evaluation(y_true, y_pred):
+    conf = confusion_matrix(y_true, y_pred)
+    score = 0
+    score += conf[0][1] * -25
+    score += conf[1][0] * -5
+    score += conf[1][1] * 5
+
+    return score</code></pre>
+    <figcaption>score_evaluation function</figcaption>
+  </figure>
+
+  <p>
+    The function <code>find_best_thresh</code> iteratively searches the threshold value that optimizes the score of
+    the classifier. In the iteration loop, an average score at that threshold is computed. All scores and thresholds
+    are then stored to be plotted. Ideally we want to see that the model forms a nice curve with scores and that there
+    is a global optimum that we find. It may also be that the model produces chaos and the results are arbitrary. A
+    random curve would strongly indicate that the model will perform poorly on test data.
+  </p>
+
+  <p>
+    The function <code>get_test_score</code> takes the trained model and awards it a score from the released test data
+    of the contest.
+  </p>
+
+  <h4>Plots</h4>
+
+  <p>
+    The confusion matrix is generated with <code>plot_fraud_confusion_matrix</code> which uses scikit-learn and is
+    normalized. The train-test split used to fit the classifier is random.
+  </p>
+
+  <p>
+    The precision recall plot is generated with <code>plot_precision_recall_curve</code> from scikit-learn.
+  </p>
+
+  <p>
+    The cross-validated ROC curve is generated with <code>plot_cv_roc_curve</code> and has been taken from a
+    <a href="#ref-cv-roc">tutorial</a> page from scikit-learn. The visualization is more advanced than the normal ROC
+    plot, as it uses cross-validated models to generate multiple ROC curves in the same plot. This allows us to see an
+    interval in which the ROC curve would probably lie with test data.
+  </p>
+
+  <p>
+    The learning curves plot is generated with
+    <code>plot_learning_curve</code>. The implementation is heavily inspired by another sckit-learn
+    <a href="#ref-plot-learning-curves">tutorial</a>. The first plot shows the training and the cross-validated score
+    during the training process by using more samples.
+  </p>
+
+  <h3>Decision Tree</h3>
+
+<p>
+  First we try to build a decision tree classifier. We use the dataset as prepared in the previous chapter. We use a
+  decision tree as the first simple algorithm knowingly it will probably either overfit or not fit at all as decision
+  trees are prone to.
+</p>
+
+<p>
+  The grid search for DecisionTreeClassifier had the task to find the best hyper-params out of the following:
+</p>
+
+<ul>
+  <li><b>criterion</b>: gini, entropy</li>
+  <li><b>splitter</b>: best, random</li>
+</ul>
+
+<p>
+  The best score was achieved with criterion=gini and splitter=random. The score is 520€.
+</p>
+
+<p>
+  We actually get the maximum positive monetary value. This mean our model fitted the data perfectly. This is commonly
+  the case with decision trees, that they overfit very likely. We would have to combat this with regularization
+  techniques such as limiting the splits or the depth.
+</p>
+
+<p>
+  Now if we train a model with the found hyper-parameters, we get the following plots:
+</p>
+
+<figure>
+  <img src="images/decision-tree/confusion.png">
+  <figcaption>Decision tree confusion matrix</figcaption>
+</figure>
+
+<p>
+  As the confusion matrix shows, the model is not good at predicting fraud at all.
+</p>
+
+
+<figure>
+  <img src="images/decision-tree/precision-recall.png">
+  <figcaption>Decision tree precision-recall</figcaption>
+</figure>
+
+<p>
+  In this plot we see that the model does not transition from precision to recall and rather has a hard point at which
+  it suddenly changes. This indicates the model is probably too simplistic.
+</p>
+
+<figure>
+  <img src="images/decision-tree/roc.png">
+  <figcaption>Decision tree cross-validated ROC curves</figcaption>
+</figure>
+
+<p>
+  We see the same here as we do multiple cross-validations. We intent the curve to be more belly shaped or round. Since
+  we are dealing with a severe imbalance of data, it actually does not make much sense to generate ROC curves as they
+  will always very much lean towards one side and reading them will be difficult. So, that's why in the further explored
+  algorithms we do no longer look at ROC curves. <a href="#ref-precision-recall">Source</a>
+</p>
+
+<figure>
+  <img src="images/decision-tree/learning.png">
+  <figcaption>Decision tree learning curves</figcaption>
+</figure>
+
+<p>
+  Finally, the learning curves show us that the model is not generalizing and rather only learning the training data.
+  No wonder as it's an unregularized decision tree.
+</p>
+
+<p>
+  We now want to figure out at what level we have to set the threshold for the model to predict fraud or no fraud. We do
+  not simply want to assume that at 50% probability it's either fraud or no fraud as we want to optimize our score at
+  the end. So, we built an algorithm that tries to find the best threshold to use by iterating through different
+  thresholds and with each simulating a train-test split and predicting the class probabilistically. The best threshold
+  found is to depict fraud when the probability is at 26% to maximize our score. We get a score of 133€ for it. But a
+  closer look at the distribution of scores reveals that this was pure coincidence as the model is too simple in itself:
+</p>
+
+<figure>
+  <img src="images/decision-tree/score-threshold.png">
+  <figcaption>Decision tree thresholds vs score</figcaption>
+</figure>
+
+<p>
+  The model also does not perform well at all with the released test data from the contest. It scores -37,340€ in
+  monetary value.
+</p>
+
+<p>
+  But not to dwell too much with this algorithm, we are going to move on to an algorithm that can generate a model that
+  has more capacity and better methods to avoid overfitting now.
+</p>
+
+
+<!-- References -->
+
+<p id="ref-precision-recall" class="reference-item">
+  <span class="ref">Machine Learning Mastery: How to Use ROC Curves and Precision-Recall Curves for Classification in Python</span>
+  <a href="https://machinelearningmastery.com/roc-curves-and-precision-recall-curves-for-classification-in-python/" target="_blank" rel="noopener">https://machinelearningmastery.com/roc-curves-and-precision-recall-curves-for-classification-in-python/</a>
+  <span class="retrieved">08.12.2019</span>
+</p>
+
+  <h3>Logistic Regression</h3>
+
+<p>
+  Next we try a logistic regression model. This is a linear model that uses a logistic function to model a binary
+  variable. Since we are trying to solve a binary classification problem, this could work out.
+</p>
+
+<p>
+  The grid search for LogisticRegression had the task to find the best hyper-params out of the following:
+</p>
+
+<ul>
+  <li><b>C</b>: 0, 0.1, ..., 1</li>
+  <li><b>solver</b>: liblinear, lbfgs, newton-cg, sag, saga</li>
+</ul>
+
+<p>
+  The best score was achieved with C=1 and solver=lbfgs which are the default scikit-learn parameters.
+  The score although is -405€.
+</p>
+
+<p>
+  When looking at the confusion matrix of a model trained with these parameters, we see little difference compared to
+  the decision tree model:
+</p>
+
+<figure>
+  <img src="images/logistic-regression/confusion.png">
+  <figcaption>Logistic regression confusion matrix</figcaption>
+</figure>
+
+<p>
+  The precision-recall plot looks more promising compared to the decision tree model. We now see that the model has
+  generalized. The curve does not have to be smooth produce acceptable results, but it would be good.
+</p>
+
+<figure>
+  <img src="images/logistic-regression/precision-recall.png">
+  <figcaption>Logistic regression precision-recall</figcaption>
+</figure>
+
+<p>
+  In the learning curves we see that the cross-validated score actually reaches a positive value. But we also see
+  that the training score somehow reached a negative value. while the cross-validated score is barely positive. This
+  is due to the imbalanced dataset. In a slice of the data, the maximum might be a negative value. But we know in the
+  cross-validated score we can reach up to 520€.
+</p>
+
+<figure>
+  <img src="images/logistic-regression/learning.png">
+  <figcaption>Logistic regression learning curves</figcaption>
+</figure>
+
+<p>
+  Once we try to find the best threshold to decide between fraud and no fraud, we find, that this model actually
+  has a more predictive inner structure, as there clearly as a "best" threshold to be chosen to maximize the score.
+  The threshold finding algorithm has figured, that with this model, the threshold should be pretty high to maximize
+  the score to pay the evaluation matrix respect.
+</p>
+
+<figure>
+  <img src="images/logistic-regression/score-threshold.png">
+  <figcaption>Logistic regression score-threshold curves</figcaption>
+</figure>
+
+<p>
+  The best threshold is 91% and the score at that point is 78€. If we evaluate the model on the released test data,
+  we get a score of 44,605€ which is a great score compared to the theoretical maximum.
+</p>
+
+  <h3>Random Forest</h3>
+
+<p>
+  The grid search for RandomForestClassifier had the task to find the best hyper-params out of the following:
+</p>
+<ul>
+  <li><b>n_estimators</b>: 100, 150, 200, 250, 300</li>
+  <li><b>criterion</b>: gini, entropy</li>
+</ul>
+
+<p>
+  The best score was achieved with n_estimators=250 and criterion=gini. The score is 520€ which is the optimum.
+</p>
+
+<p>
+  The precision-recall plot looks more promising compared to the decision tree model. We now see that the model has
+  generalized. The curve does not have to be smooth produce acceptable results, but it would be good.
+</p>
+
+<figure>
+  <img src="images/random-forest/precision-recall.png">
+  <figcaption>Random forest precision-recall</figcaption>
+</figure>
+
+<p>
+  In the learning curve plot we can see that the model has a high variance problem. But nonetheless, both training
+  and cross-validated scores are positive, which is something we didn't reach before.
+</p>
+
+<figure>
+  <img src="images/random-forest/learning.png">
+  <figcaption>Random forest learning curves</figcaption>
+</figure>
+
+<p>
+  The score-threshold plot is a nice smooth curve, which is what we theoretically want. But we also want a global
+  optimum in the curve that we can pick to optimize the score. This curve is topping out and there are several
+  global optima available. This is a problem.
+</p>
+
+<figure>
+  <img src="images/random-forest/score-threshold.png">
+  <figcaption>Random forest score-threshold curves</figcaption>
+</figure>
+
+<p>
+  The best threshold is 56% and the score at that point is 132€. If we evaluate the model on the released test data,
+  we get a score of 10,455€ which is not too far off the maximum score possible but not the best algorithm evaluated.
+</p>
+
+  <h3>KNeighbor Classifier</h3>
+
+<p>
+  The grid search for KNeighborsClassifier had the task to find the best hyper-params out of the following:
+</p>
+<ul>
+  <li><b>n_neighbors</b>: 3, 5, 8, 9, 10, 11, 12, 15</li>
+  <li><b>weights</b>: uniform, distance</li>
+  <li><b>algorithm</b>: auto, ball_tree, kd_tree</li>
+</ul>
+
+<p>
+  The best score was achieved with n_neighbors=10, weights=uniform and algorithm=auto.
+  The score is -520€ which is what we would get if we would always predict 0 (not fraud). So, the model has probably
+  learned to always predict not fraud.
+</p>
+
+<p>
+  This is exactly what we see in the confusion matrix. Fraud is just never predicted.
+</p>
+
+<figure>
+  <img src="images/kneighbors/confusion.png">
+  <figcaption>KNeighbor classifier confusion matrix</figcaption>
+</figure>
+
+<p>
+  In the learning curve we see the same phenomena. The training score starts out good but gets worse and worse.
+</p>
+
+<figure>
+  <img src="images/kneighbors/learning.png">
+  <figcaption>KNeighbor classifier learning curves</figcaption>
+</figure>
+
+<p>
+  The maximum score in the score-threshold diagram also reveals that this models best threshold is just the threshold
+  that ensures fraud is never predicted. Every other choice would be worse than the baseline.
+</p>
+
+<figure>
+  <img src="images/kneighbors/score-threshold.png">
+  <figcaption>KNeighbor classifier score-threshold curves</figcaption>
+</figure>
+
+<p>
+  The best threshold is 56% and the score at that point is -126€. If we evaluate the model on the released test data,
+  we get a score of -118,635€.
+</p>
+
+  <h3>Support Vector Classifier</h3>
+
+<p>
+  The grid search for SVC had the task to find the best hyper-params out of the following:
+</p>
+<ul>
+  <li><b>C</b>: 0.5, 0.6, ..., 1</li>
+  <li><b>kernel</b>: rbf, linear</li>
+  <li><b>gamma</b>: scale, auto</li>
+</ul>
+
+<p>
+  The best score was achieved with C=0.8, kernel=linear and gamma=scale. The score is 295€.
+</p>
+
+<p>
+  The precision-recall plot looks good and nearly how we would want it to be.
+</p>
+
+<figure>
+  <img src="images/svc/precision-recall.png">
+  <figcaption>SVC precision-recall</figcaption>
+</figure>
+
+<p>
+  The learning curves reveal again a slight high variance problem.
+</p>
+
+<figure>
+  <img src="images/svc/learning.png">
+  <figcaption>SVC learning curves</figcaption>
+</figure>
+
+<p>
+  Now the score-threshold curve is a smooth curve with a global optimum. Finally the perfect curve we were looking
+  for.
+</p>
+
+<figure>
+  <img src="images/svc/score-threshold.png">
+  <figcaption>SVC score-threshold curves</figcaption>
+</figure>
+
+<p>
+  The best threshold is 56% and the score at that point is 84€. If we evaluate the model on the released test data,
+  we get a score of 44,785€.
+</p>
+
+  <h3>Neural Net</h3>
+
+<p>
+  We also tried to fit a neural network to the data. The challenge herein lied in developing a loss function that
+  does not prohibit gradient descent from finding good steps and does reflect our score evaluation.
+</p>
+
+<p>
+  The network architecture would have been as follows:
+</p>
+
+<figure>
+  <pre><code>model = tf.keras.Sequential([
+    tf.keras.layers.Dense(64, activation='relu'),
+    tf.keras.layers.Dense(64, activation='relu'),
+    tf.keras.layers.Dense(1, activation='sigmoid')
+])</code></pre>
+  <figcaption>Neural network architecture</figcaption>
+</figure>
+
+<p>
+  Using the standard loss function <code>binary_crossentropy</code> this model converged. The problem was that it
+  did not optimize the score but rather the accuracy which is not what we want. So, we looked for a way to build a
+  loss function that has weights to our desire and still allows the algorithm to learn:
+</p>
+
+<figure><pre><code>def w_binary_crossentropy(y_true, y_pred, weights):
+    nb_cl = len(weights)
+    final_mask = K.zeros_like(y_pred[:, 0])
+    y_pred_max = K.max(y_pred, axis=1)
+    y_pred_max = K.reshape(y_pred_max, (K.shape(y_pred)[0], 1))
+    y_pred_max_mat = K.equal(y_pred, y_pred_max)
+    for c_p, c_t in product(range(nb_cl), range(nb_cl)):
+        final_mask += (weights[c_t, c_p] * y_pred_max_mat[:, c_p] * y_true[:, c_t])
+    return K.binary_crossentropy(y_pred, y_true) * final_mask
+</code></pre>
+  <figcaption>Weighted binary cross entropy loss function</figcaption>
+</figure>
+
+<p>
+  This function is inspired by a <a href="#ref-loss-function">Github Issue comment</a>. But when using this function,
+  the learner could not converge anymore because the loss was not scaled properly. We couldn't get this to work as
+  expected and abandoned the idea of neural networks.
+</p>
+
+
+</div>
+
+<!-- References -->
+
+<p id="ref-cv-roc" class="reference-item">
+  <span class="ref">scikit-learn: Receiver Operating Characteristic (ROC) with cross validation</span>
+  <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc_crossval.html"
+     target="_blank"
+     rel="noopener">https://scikit-learn.org/stable/ auto_examples/model_selection/plot_roc_crossval.html</a>
+  <span class="retrieved">08.12.2019</span>
+</p>
+
+<p id="ref-plot-learning-curves" class="reference-item">
+  <span class="ref">scikit-learn: Plotting Learning Curves</span>
+  <a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_learning_curve.html"
+     target="_blank"
+     rel="noopener">https://scikit-learn.org/stable/ auto_examples/model_selection/plot_learning_curve.html</a>
+  <span class="retrieved">08.12.2019</span>
+</p>
+
+<p id="ref-loss-function" class="reference-item">
+  <span class="ref">Github Keras: Is there a way in Keras to apply different weights to a cost function?</span>
+  <a href="https://github.com/keras-team/keras/issues/2115#issuecomment-204060456" target="_blank" rel="noopener">https://github.com/keras-team/keras/issues/2115#issuecomment-204060456</a>
+  <span class="retrieved">15.12.2019</span>
+</p>
+
+<div class="chapter">
+  <h2 class="break">Results</h2>
+  <p>
+    The different classifiers performed roughly in the order we would have expected them to. What we didn't know is if
+    the actual scores would turn out to be any good and competitive in the competition.
+  </p>
+  <p>
+    What we also noticed when trying a more complex method than an SVC, we struggled to get the classifier to train with
+    the data. With such little number of samples, it is not feasible to train a neural network.
+  </p>
+
+  <h3>Scores</h3>
+
+  <figure>
+    <table>
+      <thead>
+      <tr>
+        <th>Algorithm</th>
+        <th>Score in training</th>
+        <th>Score in test</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr><td>SVC</td><td>84€</td><td>44,785€</td></tr>
+      <tr><td>Logistic Regression</td><td>78€</td><td>44,605€</td></tr>
+      <tr><td>Random Forest</td><td>132€</td><td>10,455€</td></tr>
+      <tr><td>Decision Tree</td><td>96€</td><td>-37,340€</td></tr>
+      <tr><td>KNeighbor Classifier</td><td>-126€</td><td>-118,635€</td></tr>
+      </tbody>
+    </table>
+    <figcaption>Resulting scores of different model algorithms tried</figcaption>
+  </figure>
+
+  <p>
+    The best classifier thus is the SVC closely followed by Logistic Regression for this particular problem. We are not
+    surprised by the outcome as an SVC is able to come to the best trade off. It can cope with linear data extremely
+    well and if the data is non-linear, it can project the data into a linear space. The close follower Logistic
+    Regression probably did that good because we boiled down the variables down to four and had the problem of binary
+    classification to which logistic regression is very easy to apply.
+  </p>
+
+  <h3>Conclusion</h3>
+
+  <p>
+    It was very helpful to read into data pre-processing, variable selection, training algorithms, cross-validation,
+    grid search, regularization, evaluation and so on. This was a small enough project to not be overloaded with the
+    challenge, but still tricky enough that simple copy-paste from the Internet simply doesn't work. We had to think
+    hard about the problem and make the right conclusions to get to an acceptable result.
+  </p>
+
+  <p>
+    Personally, I think the contest was a bit artificial as the training set was so small. Training a classifier on such
+    little data will inevitably result in some variance in the submitted results from other contestants. Thus, luck was
+    certainly needed to perform well in this competition besides building a robust classifier.
+  </p>
+
+  <p>
+    Overall, I'm happy to have completed the project and I think I learned a lot of hands-on techniques that I only
+    heard of in lectures.
+  </p>
+
+</div>
+
+
+<h2 class="break">Appendix</h2>
+<div class="chapter">
+  <h3>References</h3>
+
+<div id="references"></div>
+
+  <h3 class="break">Figures</h3>
+
+<ul id="figures" class="allow-page-break"></ul>
+
+  <h3 class="break">Software</h3>
+
+<p>
+  The following software was used to generate the results of this work:
+</p>
+
+<h4>Services</h4>
+<ul>
+  <li>Google Drive</li>
+  <li>GitHub</li>
+</ul>
+<h4>IDE</h4>
+<ul>
+  <li>IntelliJ IDEA</li>
+  <li>Jupyter Notebook</li>
+  <li>Visual Studio Code</li>
+</ul>
+<h4>Tools</h4>
+<ul>
+  <li>Git</li>
+  <li>PrinceXML</li>
+</ul>
+<h4>Frameworks</h4>
+<ul>
+  <li>scikit-learn</li>
+  <li>Tensorflow</li>
+</ul>
+<h4>Programming Languages / Platforms</h4>
+<ul>
+  <li>Python</li>
+  <li>Anaconda</li>
+</ul>
+
+  <h3 class="break">Glossary</h3>
+
+<!-- this list is alphabetically sorted, if you add to it, make sure it stays sorted -->
+<dl>
+  <dt>CSV</dt><dd>Comma Separated Values</dd>
+  <dt>CV</dt><dd>Cross Validation</dd>
+  <dt>DMC</dt><dd>Data Mining Cup</dd>
+  <dt>ML</dt><dd>Machine Learning</dd>
+  <dt>RF</dt><dd>Random Forest</dd>
+  <dt>ROC</dt><dd>Receiver Operator Characteristic</dd>
+  <dt>SVC</dt><dd>Support Vector Classifier</dd>
+</dl>
+
+</div>
+
+
+
+</body>
+</html>
