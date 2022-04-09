@@ -22,7 +22,7 @@
     "gulp-nunjucks-render": "^2.2.3",
     "gulp-util": "^3.0.8",
     "jquery": "^3.5.0",
-    "moment": "^2.24.0",
+    "moment": "^2.29.2",
     "nunjucks": "^3.2.0",
     "vinyl-buffer": "^1.0.1"
   },
